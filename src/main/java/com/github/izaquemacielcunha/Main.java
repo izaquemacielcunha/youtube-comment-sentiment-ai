@@ -4,6 +4,10 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.github.izaquemacielcunha.controller.VideoController;
+import com.github.izaquemacielcunha.model.youtube.YouTubeCredentials;
+import com.github.izaquemacielcunha.provider.HttpNetworkClient;
+import com.github.izaquemacielcunha.provider.JsonObjectMapper;
+import com.github.izaquemacielcunha.service.YouTube;
 import com.github.izaquemacielcunha.validation.VideoUrlValidator;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
@@ -15,8 +19,10 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class Main {
     public static void main(String[] args) {
+        final var credentials = new YouTubeCredentials(System.getenv("YOUTUBE_API_URL"), System.getenv("YOUTUBE_API_KEY"));
+        final var youTube = new YouTube(credentials, HttpNetworkClient.getHttpClient(), JsonObjectMapper.getMapper());
         final var videoUrlValidator = new VideoUrlValidator();
-        final var videoController = new VideoController(videoUrlValidator);
+        final var videoController = new VideoController(videoUrlValidator, youTube);
 
         var app = Javalin.create(config -> {
             config.concurrency.useVirtualThreads = true;
@@ -24,12 +30,11 @@ public class Main {
             config.routes.apiBuilder(() -> {
                 path("/video", () ->{
                     post("/comment/sentiment", videoController::getCommentsSentiment);
+                    post("/metadata", videoController::getMetadata);
                 });
             });
 
-            config.jsonMapper(new JavalinJackson().updateMapper(mapper -> {
-                mapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
-            }));
+            config.jsonMapper(JsonObjectMapper.getMapper());
 
             config.routes.exception(IllegalArgumentException.class, (e, ctx) -> {
                 // TODO Add mapper to json
