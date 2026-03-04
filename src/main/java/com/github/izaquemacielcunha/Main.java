@@ -53,7 +53,7 @@ public class Main {
 
             // TODO general error
             config.routes.error(404, context -> {
-                context.status(404).json(Map.of("message", "Se fodeu"));
+                context.status(404).json(Map.of("message", "Not found bicho"));
             });
 
         }).start();

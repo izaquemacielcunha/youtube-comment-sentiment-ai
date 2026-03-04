@@ -38,13 +38,15 @@ public class YouTube {
     public YouTubeVideoCommentsResponse getVideoComments(String videoId) throws IOException, InterruptedException {
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(getFullUrlComments(videoId)))
+                .uri(URI.create(getFullUrlVideoComments(videoId)))
                 .timeout(Duration.ofSeconds(30))
                 .header("Accept", "application/json")
                 .GET()
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        //TODO validate response code
 
         String body = response.body();
 
@@ -56,13 +58,15 @@ public class YouTube {
     public YouTubeVideoMetadataResponse getVideoMetadata(String videoId) throws IOException, InterruptedException {
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(getFullUrlMetadata(videoId)))
+                .uri(URI.create(getFullUrlVideoMetadata(videoId)))
                 .timeout(Duration.ofSeconds(30))
                 .header("Accept", "application/json")
                 .GET()
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        //TODO validate response code
 
         String body = response.body();
 
@@ -71,7 +75,7 @@ public class YouTube {
         return objectMapper.fromJsonString(body, YouTubeVideoMetadataResponse.class);
     }
 
-    private String getFullUrlComments(String videoId) {
+    private String getFullUrlVideoComments(String videoId) {
         Map<String, String> parameters = new HashMap<>();
         parameters.put("part", "snippet");
         parameters.put("videoId", encodeUrlParam(videoId));
@@ -90,7 +94,7 @@ public class YouTube {
         return credentials.url() + YOUTUBE_VIDEO_COMMENTS_PATH + "?" + queryString;
     }
 
-    private String getFullUrlMetadata(String videoId) {
+    private String getFullUrlVideoMetadata(String videoId) {
         Map<String, String> parameters = new HashMap<>();
         parameters.put("part", "snippet");
         parameters.put("id", encodeUrlParam(videoId));
