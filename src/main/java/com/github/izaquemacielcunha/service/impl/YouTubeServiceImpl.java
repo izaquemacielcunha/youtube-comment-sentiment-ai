@@ -1,6 +1,5 @@
-package com.github.izaquemacielcunha.service;
+package com.github.izaquemacielcunha.service.impl;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -15,12 +14,15 @@ import java.util.stream.Collectors;
 import com.github.izaquemacielcunha.model.youtube.YouTubeCredentials;
 import com.github.izaquemacielcunha.model.youtube.response.comment.YouTubeVideoCommentsResponse;
 import com.github.izaquemacielcunha.model.youtube.response.video.YouTubeVideoMetadataResponse;
-import io.javalin.json.JsonMapper;
+
+import com.github.izaquemacielcunha.service.YouTubeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class YouTube {
-    private static final Logger logger = LoggerFactory.getLogger(YouTube.class);
+import io.javalin.json.JsonMapper;
+
+public class YouTubeServiceImpl implements YouTubeService {
+    private static final Logger logger = LoggerFactory.getLogger(YouTubeServiceImpl.class);
 
     private static final String YOUTUBE_VIDEO_COMMENTS_PATH = "/commentThreads";
     private static final String YOUTUBE_VIDEO_PATH = "/videos";
@@ -29,17 +31,17 @@ public class YouTube {
     private final HttpClient httpClient;
     private final JsonMapper objectMapper;
 
-    public YouTube(YouTubeCredentials credentials, HttpClient httpClient, JsonMapper objectMapper) {
+    public YouTubeServiceImpl(YouTubeCredentials credentials, HttpClient httpClient, JsonMapper objectMapper) {
         this.credentials = credentials;
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
     }
 
-    public YouTubeVideoCommentsResponse getVideoComments(String videoId) throws IOException, InterruptedException {
+    public YouTubeVideoCommentsResponse getVideoComments(String videoId) throws Exception {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(getFullUrlVideoComments(videoId)))
-                .timeout(Duration.ofSeconds(30))
+                .timeout(Duration.ofSeconds(10))
                 .header("Accept", "application/json")
                 .GET()
                 .build();
@@ -55,11 +57,11 @@ public class YouTube {
         return objectMapper.fromJsonString(body, YouTubeVideoCommentsResponse.class);
     }
 
-    public YouTubeVideoMetadataResponse getVideoMetadata(String videoId) throws IOException, InterruptedException {
+    public YouTubeVideoMetadataResponse getVideoMetadata(String videoId) throws Exception {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(getFullUrlVideoMetadata(videoId)))
-                .timeout(Duration.ofSeconds(30))
+                .timeout(Duration.ofSeconds(10))
                 .header("Accept", "application/json")
                 .GET()
                 .build();

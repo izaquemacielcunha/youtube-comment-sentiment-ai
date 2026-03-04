@@ -1,16 +1,19 @@
 package com.github.izaquemacielcunha;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.github.izaquemacielcunha.controller.VideoController;
+import com.github.izaquemacielcunha.model.Mapper;
+import com.github.izaquemacielcunha.model.azure.AzureOpenAICredentials;
 import com.github.izaquemacielcunha.model.youtube.YouTubeCredentials;
 import com.github.izaquemacielcunha.provider.HttpNetworkClient;
 import com.github.izaquemacielcunha.provider.JsonObjectMapper;
-import com.github.izaquemacielcunha.service.YouTube;
+import com.github.izaquemacielcunha.service.AzureOpenAIService;
+import com.github.izaquemacielcunha.service.YouTubeService;
+import com.github.izaquemacielcunha.service.impl.AzureOpenAIServiceImpl;
+import com.github.izaquemacielcunha.service.impl.YouTubeServiceImpl;
 import com.github.izaquemacielcunha.validation.VideoUrlValidator;
 import io.javalin.Javalin;
-import io.javalin.json.JavalinJackson;
 
 import java.util.Map;
 
@@ -19,10 +22,13 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class Main {
     public static void main(String[] args) {
-        final var credentials = new YouTubeCredentials(System.getenv("YOUTUBE_API_URL"), System.getenv("YOUTUBE_API_KEY"));
-        final var youTube = new YouTube(credentials, HttpNetworkClient.getHttpClient(), JsonObjectMapper.getMapper());
+        final var youTubeCredentials = new YouTubeCredentials(System.getenv("YOUTUBE_API_URL"), System.getenv("YOUTUBE_API_KEY"));
+        final YouTubeService youTubeService = new YouTubeServiceImpl(youTubeCredentials, HttpNetworkClient.getHttpClient(), JsonObjectMapper.getMapper());
+        final AzureOpenAICredentials azureOpenAiCredentials = new AzureOpenAICredentials(System.getenv("AZURE_OPEN_AI_API_URL"), System.getenv("AZURE_OPEN_AI_API_KEY"), System.getenv("AZURE_OPEN_AI_API_VERSION"));
+        final AzureOpenAIService azureOpenAIService = new AzureOpenAIServiceImpl(azureOpenAiCredentials, HttpNetworkClient.getHttpClient(), JsonObjectMapper.getMapper());
         final var videoUrlValidator = new VideoUrlValidator();
-        final var videoController = new VideoController(videoUrlValidator, youTube);
+        final var mapper = new Mapper();
+        final var videoController = new VideoController(youTubeService, azureOpenAIService, videoUrlValidator, mapper);
 
         var app = Javalin.create(config -> {
             config.concurrency.useVirtualThreads = true;
@@ -30,7 +36,6 @@ public class Main {
             config.routes.apiBuilder(() -> {
                 path("/video", () ->{
                     post("/comment/sentiment", videoController::getCommentsSentiment);
-                    post("/metadata", videoController::getMetadata);
                 });
             });
 

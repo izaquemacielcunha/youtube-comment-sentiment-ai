@@ -1,17 +1,20 @@
 package com.github.izaquemacielcunha.model;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.github.izaquemacielcunha.model.azure.request.AzureOpenAIRequest;
 import com.github.izaquemacielcunha.model.azure.request.Content;
 import com.github.izaquemacielcunha.model.azure.request.Message;
 import com.github.izaquemacielcunha.model.youtube.response.comment.Item;
 import com.github.izaquemacielcunha.model.youtube.response.comment.YouTubeVideoCommentsResponse;
 import com.github.izaquemacielcunha.model.youtube.response.video.YouTubeVideoMetadataResponse;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 public class Mapper {
 
-    public void mapToAzureAiRequest(YouTubeVideoCommentsResponse videoCommentsResponse, YouTubeVideoMetadataResponse videoMetadataResponse) {
+    public AzureOpenAIRequest mapToAzureOpenAiRequest(YouTubeVideoCommentsResponse videoCommentsResponse,
+                                                      YouTubeVideoMetadataResponse videoMetadataResponse) {
+
         Message systemMessage = new Message("system", List.of(
                 new Content("text",
                         """ 
@@ -30,11 +33,11 @@ public class Mapper {
                                 FORMATO DE SAÍDA (CRÍTICO):
                                 Você deve responder EXCLUSIVAMENTE em um formato JSON válido, sem usar blocos de código Markdown (como ```json). Sua resposta deve ser apenas o objeto JSON estruturado da seguinte forma:
                                 {
-                                "sentimento_geral": "Positivo|Negativo|Neutro|Misto",
-                                "score_confianca": [Um número de 0.0 a 1.0 indicando a força desse sentimento],
-                                "resumo_qualitativo": "[Um parágrafo curto, de até 3 linhas, explicando o humor principal da audiência]",
-                                "pontos_positivos_frequentes": ["[lista", "de", "elogios"]],
-                                "pontos_negativos_frequentes": ["[lista", "de", "criticas"]]
+                                "sentimentoGeral": "Positivo|Negativo|Neutro|Misto",
+                                "scoreConfianca": [Um número de 0.0 a 1.0 indicando a força desse sentimento],
+                                "resumoQualitativo": "[Um parágrafo curto, de até 3 linhas, explicando o humor principal da audiência]",
+                                "pontosPositivosFrequentes": ["[lista", "de", "elogios"]],
+                                "pontosNegativosFrequentes": ["[lista", "de", "criticas"]]
                                 }
                                 """)
         ));
@@ -42,9 +45,12 @@ public class Mapper {
         Message userMessage = new Message("user", List.of(
                 new Content("text", buildUserMessage(videoCommentsResponse, videoMetadataResponse))
         ));
+
+        return new AzureOpenAIRequest(List.of(systemMessage, userMessage));
     }
 
-    private String buildUserMessage(YouTubeVideoCommentsResponse videoCommentsResponse, YouTubeVideoMetadataResponse videoMetadataResponse) {
+    private String buildUserMessage(YouTubeVideoCommentsResponse videoCommentsResponse,
+                                    YouTubeVideoMetadataResponse videoMetadataResponse) {
         return "[NOME]:\n" +
                 videoMetadataResponse.items().getFirst().snippet().channelTitle() + "\n" +
                 "[TÍTULO]:\n" +
@@ -54,12 +60,15 @@ public class Mapper {
                 "[DESCRIÇÃO]:\n" +
                 videoMetadataResponse.items().getFirst().snippet().description() + "\n" +
                 "[TAGS]:\n" +
-                buildTags(videoMetadataResponse.items().getFirst().snippet().tags()) +
+                buildTags(videoMetadataResponse.items().getFirst().snippet().tags()) + "\n" +
                 "[COMENTÁRIOS]:\n" +
                 buildComments(videoCommentsResponse.items());
     }
 
     private String buildTags(List<String> tags) {
+        if (null == tags || tags.isEmpty()) {
+            return "Nenhuma tag foi associada a este vídeo";
+        }
         return tags.stream()
                 .map(tag -> "-" + tag)
                 .collect(Collectors.joining("\n"));

@@ -2,13 +2,13 @@ package com.github.izaquemacielcunha.model.azure.request;
 
 import java.util.List;
 
-public record AzureOpenAi(
-        List<Message> contents,
+public record AzureOpenAIRequest(
+        List<Message> messages,
         int temperature,
         double top_p,
         int max_tokens
 ) {
-    public AzureOpenAi(List<Message> contents) {
-        this(contents, 0, 0.01, 1000);
+    public AzureOpenAIRequest(List<Message> messages) {
+        this(messages, 0, 0.01, 1000);
     }
 }

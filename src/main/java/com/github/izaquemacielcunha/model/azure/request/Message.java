@@ -4,5 +4,5 @@ import java.util.List;
 
 public record Message(
         String role,
-        List<Content> contents
+        List<Content> content
 ) { }
